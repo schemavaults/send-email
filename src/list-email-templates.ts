@@ -1,10 +1,5 @@
-import {
-  getAppEnvironment,
-  getHardcodedApiServerDomain,
-  SCHEMAVAULTS_MAIL_APP_DEFINITION,
-  type SchemaVaultsAppEnvironment,
-} from "@schemavaults/app-definitions";
 import getSchemaVaultsMailApiKey from "./get-api-key";
+import parseMailServerUrlWithEnvFallback from "./parse-mail-server-url-with-env-fallback";
 
 export interface EmailTemplate {
   id: string;
@@ -14,22 +9,14 @@ export interface EmailTemplate {
 export interface IListEmailTemplatesOpts {
   bearerToken?: string;
   mailServerUrl?: string;
-  environment?: SchemaVaultsAppEnvironment;
 }
 
 export async function listEmailTemplates(
   opts: IListEmailTemplatesOpts = {},
 ): Promise<EmailTemplate[]> {
-  let environment: SchemaVaultsAppEnvironment;
-  if (opts.environment) {
-    environment = opts.environment;
-  } else {
-    try {
-      environment = getAppEnvironment();
-    } catch {
-      environment = "production";
-    }
-  }
+  const mail_server_url: string = parseMailServerUrlWithEnvFallback(
+    opts.mailServerUrl,
+  );
 
   let bearerToken: string;
   if (opts.bearerToken && typeof opts.bearerToken === "string") {
@@ -38,11 +25,7 @@ export async function listEmailTemplates(
     bearerToken = getSchemaVaultsMailApiKey();
   }
 
-  const mail_server_url: string = getHardcodedApiServerDomain(
-    SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
-    environment,
-  ).domain;
-  const endpoint: string = `${mail_server_url}/api/templates`;
+  const endpoint: URL = new URL("/api/templates", mail_server_url);
   const response = await fetch(endpoint, {
     method: "GET",
     headers: {

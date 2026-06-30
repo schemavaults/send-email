@@ -1,16 +1,11 @@
 // send-email.ts
 
 import {
-  getAppEnvironment,
-  getHardcodedApiServerDomain,
-  SCHEMAVAULTS_MAIL_APP_DEFINITION,
-  type SchemaVaultsAppEnvironment,
-} from "@schemavaults/app-definitions";
-import {
   type SendEmailRequestBody,
   createSendEmailRequestBodySchema,
 } from "./send-email-request-body-schema";
 import getSchemaVaultsMailApiKey from "./get-api-key";
+import parseMailServerUrlWithEnvFallback from "./parse-mail-server-url-with-env-fallback";
 
 const body_schema = createSendEmailRequestBodySchema(true);
 
@@ -18,7 +13,6 @@ export interface ISendEmailOpts {
   body: SendEmailRequestBody;
   bearerToken?: string;
   mailServerUrl?: string;
-  environment?: SchemaVaultsAppEnvironment;
   dryRun?: boolean;
 }
 
@@ -28,17 +22,6 @@ export async function sendEmail({
   body,
   ...opts
 }: ISendEmailOpts): Promise<void> {
-  let environment: SchemaVaultsAppEnvironment;
-  if (opts.environment) {
-    environment = opts.environment;
-  } else {
-    try {
-      environment = getAppEnvironment();
-    } catch {
-      environment = "production";
-    }
-  }
-
   const effectiveBody: SendEmailRequestBody =
     typeof opts.dryRun === "boolean" ? { ...body, dryRun: opts.dryRun } : body;
 
@@ -55,20 +38,11 @@ export async function sendEmail({
     bearerToken = getSchemaVaultsMailApiKey();
   }
 
-  let mail_server_url: string;
-  if (typeof opts.mailServerUrl === "string") {
-    mail_server_url = opts.mailServerUrl;
-  } else if (typeof opts.mailServerUrl === "undefined") {
-    mail_server_url = getHardcodedApiServerDomain(
-      SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
-      environment,
-    ).domain;
-  } else {
-    throw new TypeError(
-      "Expected 'mailServerUrl' to be a string or undefined!",
-    );
-  }
-  const endpoint: string = `${mail_server_url}/api/send`;
+  const mail_server_url: string = parseMailServerUrlWithEnvFallback(
+    opts.mailServerUrl,
+  );
+
+  const endpoint: URL = new URL(`/api/send`, mail_server_url);
   const response = await fetch(endpoint, {
     method: "POST",
     body: JSON.stringify(parsed.data satisfies SendEmailRequestBody),

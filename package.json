@@ -1,7 +1,7 @@
 {
   "name": "@schemavaults/send-email",
   "description": "Schema defining the shape of the request body to send an email via @schemavaults/mail-server",
-  "version": "0.0.18",
+  "version": "0.1.0",
   "license": "UNLICENSED",
   "private": false,
   "repository": {
@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "zod": "3.25.8",
-    "@schemavaults/app-definitions": "0.6.23",
     "commander": "^14.0.1"
   },
   "scripts": {

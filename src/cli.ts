@@ -3,7 +3,6 @@
 
 import { readFileSync } from "node:fs";
 import { Command, Option } from "commander";
-import type { SchemaVaultsAppEnvironment } from "@schemavaults/app-definitions";
 import sendEmail from "./send-email";
 import sendEmailToMailingList from "./send-email-to-mailing-list";
 import listEmailTemplates from "./list-email-templates";
@@ -11,7 +10,6 @@ import type { SendEmailRequestBody } from "./send-email-request-body-schema";
 
 interface GlobalOpts {
   apiKey?: string;
-  environment?: SchemaVaultsAppEnvironment;
   dryRun?: boolean;
 }
 
@@ -113,7 +111,10 @@ function attachBodyOptions(cmd: Command): Command {
     )
     .option("--text <text>", "Plain-text body (requires --html)")
     .option("--html <html>", "HTML body (requires --text)")
-    .option("--text-file <path>", "Path to a file containing the plain-text body")
+    .option(
+      "--text-file <path>",
+      "Path to a file containing the plain-text body",
+    )
     .option("--html-file <path>", "Path to a file containing the HTML body")
     .option(
       "--body-file <path>",
@@ -180,7 +181,6 @@ attachBodyOptions(
     await sendEmail({
       body,
       ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
-      ...(global.environment ? { environment: global.environment } : {}),
       ...(global.dryRun ? { dryRun: true } : {}),
     });
     console.log(
@@ -228,7 +228,6 @@ attachBodyOptions(
       body,
       ...(opts.mailingListId ? { mailingListId: opts.mailingListId } : {}),
       ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
-      ...(global.environment ? { environment: global.environment } : {}),
       ...(global.dryRun ? { dryRun: true } : {}),
     });
     console.log(
@@ -252,7 +251,6 @@ program
       const global = cmd.optsWithGlobals<GlobalOpts>();
       const templates = await listEmailTemplates({
         ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
-        ...(global.environment ? { environment: global.environment } : {}),
       });
 
       if (opts.format === "table") {
