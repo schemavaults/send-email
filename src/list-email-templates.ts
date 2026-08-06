@@ -1,4 +1,4 @@
-import getSchemaVaultsMailApiKey from "./get-api-key";
+import getSchemaVaultsMailApiKey from "@/env/get-api-key";
 import parseMailServerUrlWithEnvFallback from "./parse-mail-server-url-with-env-fallback";
 
 export interface EmailTemplate {

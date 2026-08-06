@@ -4,7 +4,7 @@ import {
   type SendEmailRequestBody,
   createSendEmailRequestBodySchema,
 } from "./send-email-request-body-schema";
-import getSchemaVaultsMailApiKey from "./get-api-key";
+import getSchemaVaultsMailApiKey from "@/env/get-api-key";
 import parseMailServerUrlWithEnvFallback from "./parse-mail-server-url-with-env-fallback";
 
 const body_schema = createSendEmailRequestBodySchema(true);

@@ -1,14 +1,16 @@
 node_modules
+
 dist
 dist-types
+
+.claude/settings.local.json
+
 .turbo
 **/.DS_Store
-.env.local
+
 .env
-.env.development
-.env.test
-.env.staging
-.env.production
+.env.*
+!.env.example
 
 send-email.tgz
 send-email-api-options.tgz

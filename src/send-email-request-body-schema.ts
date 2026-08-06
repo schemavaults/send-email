@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { emailTemplateIdSchema } from "./email-template-id-schema";
+import { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 
 const sendEmailTemplateOptions = z
   .object({

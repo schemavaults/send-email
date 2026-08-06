@@ -1,5 +1,5 @@
-import isValidUrl from "./is-valid-url";
-import resolveMailServerUrlFromEnvVars from "./resolve-mail-server-url-from-env-vars";
+import isValidUrl from "@/validators/is-valid-url";
+import getMailServerUrlFromEnvVars from "@/env/get-mail-server-url";
 
 export default function parseMailServerUrlWithEnvFallback(
   maybe_mail_server_url_input: string | undefined,
@@ -21,7 +21,7 @@ export default function parseMailServerUrlWithEnvFallback(
     mail_server_url = maybe_mail_server_url_input;
   } else if (typeof maybe_mail_server_url_input === "undefined") {
     try {
-      mail_server_url = resolveMailServerUrlFromEnvVars();
+      mail_server_url = getMailServerUrlFromEnvVars();
     } catch {
       /** no-op */
     }

@@ -1,18 +1,8 @@
 import type { SendEmailRequestBody } from "./send-email-request-body-schema";
 import sendEmail, { type ISendEmailOpts } from "./send-email";
-import { z } from "zod";
-
-export function getSchemaVaultsMailingListId(): string {
-  if (
-    !process.env.SCHEMAVAULTS_MAILING_LIST_ID ||
-    typeof process.env.SCHEMAVAULTS_MAILING_LIST_ID !== "string"
-  ) {
-    throw new Error(
-      "Failed to load mailing list ID from environment variable 'SCHEMAVAULTS_MAILING_LIST_ID'",
-    );
-  }
-  return process.env.SCHEMAVAULTS_MAILING_LIST_ID;
-}
+import isValidUuid from "@/validators/is-valid-uuid";
+import { getSchemaVaultsMailingListId } from '@/env/get-mailing-list-id';
+export { getSchemaVaultsMailingListId } from '@/env/get-mailing-list-id';
 
 export interface ISendEmailToMailingListOpts extends Omit<
   ISendEmailOpts,
@@ -20,10 +10,6 @@ export interface ISendEmailToMailingListOpts extends Omit<
 > {
   body: Omit<SendEmailRequestBody, "to" | "cc" | "bcc">;
   mailingListId?: string;
-}
-
-function isUuid(val: unknown): val is string {
-  return typeof val === "string" && z.string().safeParse(val).success;
 }
 
 export async function sendEmailToMailingList(
@@ -35,7 +21,7 @@ export async function sendEmailToMailingList(
   } else {
     to = getSchemaVaultsMailingListId();
   }
-  if (!isUuid(to)) {
+  if (!isValidUuid(to)) {
     throw new TypeError(
       "Failed to parse 'to' field as a mailing list ID (UUID)!",
     );

@@ -1,4 +1,4 @@
-export default function resolveMailServerUrlFromEnvVars(): string {
+export function getMailServerUrl(): string {
   const SCHEMAVAULTS_MAIL_SERVER_URL: string | undefined =
     process.env.SCHEMAVAULTS_MAIL_SERVER_URL;
   if (
@@ -11,3 +11,5 @@ export default function resolveMailServerUrlFromEnvVars(): string {
     `Failed to parse mail server URL from environment variable 'SCHEMAVAULTS_MAIL_SERVER_URL'`,
   );
 }
+
+export default getMailServerUrl;
