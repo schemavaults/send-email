@@ -23,6 +23,10 @@ export {
 } from "@/env/get-mailing-list-id";
 
 export {
+  getMailServerUrl
+} from "@/env/get-mail-server-url"
+
+export {
   sendEmailToMailingList,
 } from "./send-email-to-mailing-list";
 export type { ISendEmailToMailingListOpts } from "./send-email-to-mailing-list";

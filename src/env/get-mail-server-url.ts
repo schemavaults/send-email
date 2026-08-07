@@ -1,3 +1,7 @@
+/**
+ * @throws TypeError if environment variable not set
+ * @returns The mail server URL parsed from environment variable `SCHEMAVAULTS_MAIL_SERVER_URL`
+ */
 export function getMailServerUrl(): string {
   const SCHEMAVAULTS_MAIL_SERVER_URL: string | undefined =
     process.env.SCHEMAVAULTS_MAIL_SERVER_URL;

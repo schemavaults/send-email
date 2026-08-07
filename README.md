@@ -17,6 +17,7 @@ npm install @schemavaults/send-email
 | `SCHEMAVAULTS_MAIL_API_KEY` | Yes | Bearer token for the mail-server API. Starts with `svlts_mail_pk_`. |
 | `SCHEMAVAULTS_MAILING_LIST_ID` | For mailing list sends | UUID of the target mailing list. |
 | `SCHEMAVAULTS_APP_ENVIRONMENT` | No | `"production"` (default), `"development"`, or `"staging"`. Controls which mail-server instance is targeted. |
+| `SCHEMAVAULTS_MAIL_SERVER_URL` | No | What is the URL of the [`@schemavaults/mail-server` instance](https://github.com/schemavaults/mail-server) to attempt sending mail through? You may also pass the `mailServerUrl` option instead of setting an environment variable. |
 
 ## Usage
 
@@ -141,6 +142,10 @@ interface EmailTemplate {
   description: string;
 }
 ```
+
+### `getMailServerUrl()`
+
+Reads and returns `SCHEMAVAULTS_MAIL_SERVER_URL` from the environment. Throws if not set.
 
 ### `getSchemaVaultsMailApiKey()`
 
