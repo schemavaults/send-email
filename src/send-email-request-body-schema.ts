@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
+import { transportIdSchema } from "@/validators/transport-id-schema";
 
 const sendEmailTemplateOptions = z
   .object({
@@ -69,6 +70,13 @@ export function createSendEmailRequestBodySchema(
         ])
         .optional(),
       dryRun: z.boolean().optional(),
+      /**
+       * Which transport configured on the mail-server should deliver this
+       *  email? Only meaningful when the target `@schemavaults/mail-server`
+       *  instance has more than one transport configured; when omitted, the
+       *  mail-server picks its own default transport.
+       */
+      transport: transportIdSchema.optional(),
     })
     .required({
       to: true,

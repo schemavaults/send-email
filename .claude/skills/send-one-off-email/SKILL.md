@@ -92,6 +92,7 @@ These work on every subcommand, before the subcommand name:
 
 - `--api-key <key>` -- override `SCHEMAVAULTS_MAIL_API_KEY`.
 - `--environment <env>` -- override `SCHEMAVAULTS_APP_ENVIRONMENT` (`production` | `development` | `staging`).
+- `--transport <name>` -- pick which of the mail-server's configured transports delivers the email. Only relevant when the target mail-server has more than one transport; omit it to use the server's default.
 
 Example:
 
@@ -99,6 +100,10 @@ Example:
 bunx schemavaults-send-email --environment development send \
   --to me@example.com --subject "dev smoke" \
   --template-id welcome-email --template-props '{"name":"me"}'
+
+# Route through a specific transport
+bunx schemavaults-send-email --transport smtp-primary send \
+  --to alice@example.com --subject "..." --text "..." --html "..."
 ```
 
 ## Usage -- `sendEmail()` helper (for application code)
@@ -150,6 +155,7 @@ type OneOffEmailBody = {
   cc?: string | string[];          // 1-50
   bcc?: string | string[];         // 1-50
   dryRun?: boolean;                // server validates without dispatching
+  transport?: string;              // which mail-server transport to deliver with
 };
 
 // Helper call signature:
@@ -158,6 +164,7 @@ type ISendEmailOpts = {
   bearerToken?: string;            // override SCHEMAVAULTS_MAIL_API_KEY
   environment?: "production" | "development" | "staging";
   dryRun?: boolean;                // convenience; sets body.dryRun
+  transport?: string;              // convenience; sets body.transport
 };
 ```
 
@@ -172,6 +179,7 @@ The CLI prints the error message and exits non-zero. The helper throws on any no
 | `Invalid or revoked API key.` (HTTP 401) | API key is wrong, expired, or revoked. |
 | `Failed to parse request body!` (HTTP 400) | Server-side Zod parsing failed; usually a template `template_props` shape mismatch. |
 | `Provide either --template-id, or both of --text/--html …` (CLI only) | Neither a template ID nor a complete raw body was supplied. |
+| Unknown-transport error (HTTP 400) | `transport` named a transport the mail-server does not have configured. The client only checks that the name is well-formed; the server decides whether it exists. |
 
 ## Cautions
 

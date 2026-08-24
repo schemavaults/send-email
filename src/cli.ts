@@ -11,6 +11,7 @@ import type { SendEmailRequestBody } from "./send-email-request-body-schema";
 interface GlobalOpts {
   apiKey?: string;
   dryRun?: boolean;
+  transport?: string;
 }
 
 interface MessageOpts {
@@ -140,6 +141,10 @@ program
   .option(
     "--dry-run",
     "Validate the request server-side without dispatching the email",
+  )
+  .option(
+    "--transport <name>",
+    "Which mail-server transport should deliver the email (defaults to the mail-server's default transport)",
   );
 
 attachBodyOptions(
@@ -182,6 +187,7 @@ attachBodyOptions(
       body,
       ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
       ...(global.dryRun ? { dryRun: true } : {}),
+      ...(global.transport ? { transport: global.transport } : {}),
     });
     console.log(
       global.dryRun
@@ -211,6 +217,7 @@ attachBodyOptions(
         message: fullBody.message,
         ...(fullBody.from ? { from: fullBody.from } : {}),
         ...(fullBody.replyTo ? { replyTo: fullBody.replyTo } : {}),
+        ...(fullBody.transport ? { transport: fullBody.transport } : {}),
       };
     } else {
       if (!opts.subject) {
@@ -229,6 +236,7 @@ attachBodyOptions(
       ...(opts.mailingListId ? { mailingListId: opts.mailingListId } : {}),
       ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
       ...(global.dryRun ? { dryRun: true } : {}),
+      ...(global.transport ? { transport: global.transport } : {}),
     });
     console.log(
       global.dryRun
