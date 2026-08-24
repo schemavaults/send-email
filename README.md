@@ -195,7 +195,7 @@ Zod schema for validating template IDs: lowercase alphanumeric with hyphens/unde
 
 ### `transportIdSchema`
 
-Zod schema for validating transport names: alphanumeric with hyphens/underscores/periods, 1-64 characters, must start with a letter. Whether a well-formed name corresponds to a transport the mail-server actually has configured is decided server-side.
+Zod schema for validating transport names: lowercase alphanumeric with hyphens/underscores, 1-64 characters, must start with a lowercase letter and end with a lowercase alphanumeric character. Whether a well-formed name corresponds to a transport the mail-server actually has configured is decided server-side.
 
 ## Request body shape
 

@@ -56,18 +56,25 @@ describe("Transport", () => {
     test.each([
       "resend",
       "smtp",
-      "s",
-      "SMTP_Primary",
+      "s", // single lowercase letter both starts and ends the ID
+      "smtp-primary",
+      "ses_us_east_1",
       "ses-us-east-1",
-      "mail.example.com",
+      "a".repeat(64), // exactly at the length limit
     ])("accepts '%s'", (id: string) => {
       expect(transportIdSchema.safeParse(id).success).toBeTrue();
     });
 
     test.each([
       "", // empty
-      "1transport", // must start with a letter
-      "-transport", // must start with a letter
+      "1transport", // must start with a lowercase letter
+      "-transport", // must start with a lowercase letter
+      "_transport", // must start with a lowercase letter
+      "SMTP_Primary", // no uppercase
+      "smtpPrimary", // no uppercase
+      "mail.example.com", // no periods
+      "transport-", // must end with a lowercase alphanumeric character
+      "transport_", // must end with a lowercase alphanumeric character
       "has space",
       "has/slash",
       "a".repeat(65), // too long
