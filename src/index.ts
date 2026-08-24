@@ -6,6 +6,8 @@ export type { SendEmailRequestBody } from "./send-email-request-body-schema";
 
 export { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 
+export { transportIdSchema } from "@/validators/transport-id-schema";
+
 export {
   sendEmail,
   sendEmail as default,

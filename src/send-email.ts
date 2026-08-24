@@ -14,6 +14,11 @@ export interface ISendEmailOpts {
   bearerToken?: string;
   mailServerUrl?: string;
   dryRun?: boolean;
+  /**
+   * Convenience override for `body.transport` -- names which of the
+   *  mail-server's configured transports should deliver this email.
+   */
+  transport?: string;
 }
 
 export { getSchemaVaultsMailApiKey };
@@ -22,8 +27,11 @@ export async function sendEmail({
   body,
   ...opts
 }: ISendEmailOpts): Promise<void> {
-  const effectiveBody: SendEmailRequestBody =
-    typeof opts.dryRun === "boolean" ? { ...body, dryRun: opts.dryRun } : body;
+  const effectiveBody: SendEmailRequestBody = {
+    ...body,
+    ...(typeof opts.dryRun === "boolean" ? { dryRun: opts.dryRun } : {}),
+    ...(typeof opts.transport === "string" ? { transport: opts.transport } : {}),
+  };
 
   const parsed = await body_schema.safeParseAsync(effectiveBody);
   if (!parsed.success) {

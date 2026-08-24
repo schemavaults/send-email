@@ -51,6 +51,36 @@ await sendEmail({
 });
 ```
 
+### Choose a transport
+
+When the target `@schemavaults/mail-server` instance has more than one transport configured, the optional `transport` field selects which one delivers the email. Omit it to let the mail-server use its default transport.
+
+```ts
+await sendEmail({
+  body: {
+    to: "user@example.com",
+    subject: "Hello",
+    message: { text: "Hello.", html: "<p>Hello.</p>" },
+    transport: "smtp-primary",
+  },
+});
+
+// Equivalently, as a call-level override (sets `body.transport`):
+await sendEmail({
+  transport: "smtp-primary",
+  body: { to: "user@example.com", subject: "Hello", message: { /* ... */ } },
+});
+```
+
+The same applies to `sendEmailToMailingList()`, and to the CLI via the global `--transport <name>` flag:
+
+```bash
+bunx schemavaults-send-email --transport smtp-primary send \
+  --to user@example.com --subject "Hello" --text "Hello." --html "<p>Hello.</p>"
+```
+
+Transport names are defined by whoever configures the mail-server; this package only validates that the value looks like an identifier. An unknown transport name is rejected by the mail-server, not by the client.
+
 ### Send to a mailing list
 
 ```ts
@@ -109,6 +139,8 @@ interface ISendEmailOpts {
   bearerToken?: string;       // overrides SCHEMAVAULTS_MAIL_API_KEY
   mailServerUrl?: string;     // overrides resolved server URL
   environment?: "production" | "development" | "staging";
+  dryRun?: boolean;           // convenience; sets body.dryRun
+  transport?: string;         // convenience; sets body.transport
 }
 ```
 
@@ -123,6 +155,8 @@ interface ISendEmailToMailingListOpts {
   bearerToken?: string;
   mailServerUrl?: string;
   environment?: "production" | "development" | "staging";
+  dryRun?: boolean;           // convenience; sets body.dryRun
+  transport?: string;         // convenience; sets body.transport
 }
 ```
 
@@ -159,6 +193,10 @@ Returns a Zod schema for validating send-email request bodies. Pass `true` to al
 
 Zod schema for validating template IDs: lowercase alphanumeric with hyphens/underscores, 1-64 characters, must start with a letter.
 
+### `transportIdSchema`
+
+Zod schema for validating transport names: lowercase alphanumeric with hyphens/underscores, 1-64 characters, must start with a lowercase letter and end with a lowercase alphanumeric character. Whether a well-formed name corresponds to a transport the mail-server actually has configured is decided server-side.
+
 ## Request body shape
 
 The `message` field accepts either a template reference or raw content:
@@ -176,6 +214,8 @@ type SendEmailRequestBody = {
   replyTo?: string;
   cc?: string | string[];
   bcc?: string | string[];
+  dryRun?: boolean;            // server validates without dispatching
+  transport?: string;          // which mail-server transport delivers this email
 };
 ```
 
