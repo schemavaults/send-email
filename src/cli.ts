@@ -63,7 +63,7 @@ function buildMessage(opts: MessageOpts): SendEmailRequestBody["message"] {
   if (opts.templateId) {
     const props = parseTemplateProps(opts.templateProps);
     return props === undefined
-      ? { template_id: opts.templateId }
+      ? { template_id: opts.templateId, template_props: undefined }
       : { template_id: opts.templateId, template_props: props };
   }
   const text =
