@@ -9,6 +9,17 @@ export { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 export { transportIdSchema } from "@/validators/transport-id-schema";
 
 export {
+  emailAttachmentSchema,
+  emailAttachmentsSchema,
+  MAX_ATTACHMENTS_PER_EMAIL,
+  MAX_TOTAL_ATTACHMENT_BYTES,
+} from "@/validators/email-attachment-schema";
+export type { EmailAttachment } from "@/validators/email-attachment-schema";
+
+export { createEmailAttachment } from "./create-email-attachment";
+export type { EmailAttachmentInput } from "./create-email-attachment";
+
+export {
   sendEmail,
   sendEmail as default,
 } from "./send-email";

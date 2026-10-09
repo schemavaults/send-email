@@ -66,7 +66,14 @@ bunx schemavaults-send-email send \
   --text-file /tmp/digest.txt \
   --html-file /tmp/digest.html
 
-# Or supply the full request body as JSON
+# Attach files (--attach is repeatable; the basename becomes the attachment filename)
+bunx schemavaults-send-email send \
+  --to alice@example.com \
+  --subject "Q3 report" \
+  --text "Report attached." --html "<p>Report attached.</p>" \
+  --attach /tmp/q3-report.pdf --attach /tmp/q3-figures.csv
+
+# Or supply the full request body as JSON (--attach may be combined with it)
 bunx schemavaults-send-email send --body-file /tmp/payload.json
 ```
 
@@ -141,6 +148,30 @@ await sendEmail({
 
 Escape user-supplied values before embedding them in `html` if they can contain `<` / `>` / `&` -- the mail-server does not sanitize this for you.
 
+### Attachments
+
+Pass `attachments` next to `body`. Binary content (`Uint8Array` / `Buffer` / `ArrayBuffer`) and plain text (`encoding: "utf8"`) are base64-encoded for you; a bare string is assumed to be base64 already. On Node/Bun, `createEmailAttachmentFromFile()` (own subpath, since it reads from disk) turns a file path into an attachment:
+
+```ts
+import { sendEmail } from "@schemavaults/send-email";
+import { createEmailAttachmentFromFile } from "@schemavaults/send-email/create-email-attachment-from-file";
+
+await sendEmail({
+  body: {
+    to: "alice@example.com",
+    subject: "Q3 report",
+    message: { text: "Report attached.", html: "<p>Report attached.</p>" },
+  },
+  attachments: [
+    await createEmailAttachmentFromFile("/tmp/q3-report.pdf"),
+    { filename: "figures.csv", content: csvString, encoding: "utf8", contentType: "text/csv" },
+    { filename: "chart.png", content: pngBytes, contentId: "chart" }, // inline: <img src="cid:chart">
+  ],
+});
+```
+
+Limits: at most 20 attachments per email, totalling at most 25 MiB once decoded (the mail-server or its host may allow less). Filenames may not contain path separators.
+
 ## Request body shape
 
 ```ts
@@ -156,6 +187,14 @@ type OneOffEmailBody = {
   bcc?: string | string[];         // 1-50
   dryRun?: boolean;                // server validates without dispatching
   transport?: string;              // which mail-server transport to deliver with
+  attachments?: EmailAttachment[]; // 1-20 files, <= 25 MiB total once decoded
+};
+
+type EmailAttachment = {
+  filename: string;                // shown to the recipient; no path separators
+  content: string;                 // base64-encoded bytes
+  contentType?: string;            // MIME type; derived from the filename when omitted
+  contentId?: string;              // marks the file inline; reference as cid:<contentId>
 };
 
 // Helper call signature:
@@ -165,6 +204,7 @@ type ISendEmailOpts = {
   environment?: "production" | "development" | "staging";
   dryRun?: boolean;                // convenience; sets body.dryRun
   transport?: string;              // convenience; sets body.transport
+  attachments?: EmailAttachmentInput[]; // convenience; bytes/text encoded + appended to body.attachments
 };
 ```
 
@@ -179,6 +219,8 @@ The CLI prints the error message and exits non-zero. The helper throws on any no
 | `Invalid or revoked API key.` (HTTP 401) | API key is wrong, expired, or revoked. |
 | `Failed to parse request body!` (HTTP 400) | Server-side Zod parsing failed; usually a template `template_props` shape mismatch. |
 | `Provide either --template-id, or both of --text/--html …` (CLI only) | Neither a template ID nor a complete raw body was supplied. |
+| `Invalid email attachment '<filename>': …` | An `attachments` entry failed validation -- bad filename (path separators, control characters), content that is not valid base64 (did you mean `encoding: "utf8"`?), empty content, or a malformed `contentType` / `contentId`. |
+| `ENOENT: no such file or directory …` (CLI only) | A `--attach` path does not exist. Nothing is sent. |
 | Unknown-transport error (HTTP 400) | `transport` named a transport the mail-server does not have configured. The client only checks that the name is well-formed; the server decides whether it exists. |
 
 ## Cautions
@@ -188,12 +230,14 @@ The CLI prints the error message and exits non-zero. The helper throws on any no
 - **Never send a blank or "test" email to validate a request.** Use `--dry-run` (CLI) or `dryRun: true` (helper body). The mail-server validates the full request -- including `template_props` shape -- without dispatching. Real test emails create inbox noise, can leak staging addresses, and annoy recipients.
 - **Prefer mailing lists** for any audience that grows or churns -- managing a recipient list inline doesn't scale.
 - **Don't loop the CLI/helper to fan out** beyond 50 recipients per send -- create a mailing list instead and use the `send-email-to-mailing-list` skill.
+- **Keep attachments small.** Attachments ride inside the JSON body as base64 (+33% size). The client caps a send at 20 files / 25 MiB decoded, but the mail-server's host may reject far smaller bodies -- prefer linking to large files instead of attaching them.
 
 ## Reference
 
 - CLI source: `node_modules/@schemavaults/send-email/dist/cli.js` (bundled, runs under Node).
 - Helper source: `node_modules/@schemavaults/send-email/dist/send-email.{d.ts,js}`.
 - Body schema: `node_modules/@schemavaults/send-email/dist/send-email-request-body-schema.{d.ts,js}` (the same `createSendEmailRequestBodySchema` Zod schema used by both client and mail-server).
+- Attachments: `node_modules/@schemavaults/send-email/dist/create-email-attachment.{d.ts,js}` (`createEmailAttachment()`), `dist/create-email-attachment-from-file.{d.ts,js}` (Node/Bun file helper), `dist/validators/email-attachment-schema.{d.ts,js}` (schema + limits).
 
 ## Adding this skill to another project
 

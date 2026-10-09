@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 import { transportIdSchema } from "@/validators/transport-id-schema";
+import { emailAttachmentsSchema } from "@/validators/email-attachment-schema";
 
 const sendEmailTemplateOptions = z
   .object({
@@ -77,6 +78,14 @@ export function createSendEmailRequestBodySchema(
        *  mail-server picks its own default transport.
        */
       transport: transportIdSchema.optional(),
+      /**
+       * Files to attach to the email. Each attachment carries its bytes as a
+       *  base64 string (request bodies are JSON); see `createEmailAttachment`
+       *  for encoding binary or plain-text content. Between 1 and
+       *  `MAX_ATTACHMENTS_PER_EMAIL` files, totalling at most
+       *  `MAX_TOTAL_ATTACHMENT_BYTES` once decoded. Omit when there are none.
+       */
+      attachments: emailAttachmentsSchema.optional(),
     })
     .required({
       to: true,
@@ -96,5 +105,7 @@ export function createSendEmailRequestBodySchema(
 export const sendEmailRequestBodySchema = createSendEmailRequestBodySchema();
 
 export type SendEmailRequestBody = z.infer<typeof sendEmailRequestBodySchema>;
+
+export type { EmailAttachment } from "@/validators/email-attachment-schema";
 
 export default createSendEmailRequestBodySchema;
