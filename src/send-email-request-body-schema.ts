@@ -26,6 +26,16 @@ const sendRawEmailOptions = z
 
 const MAX_RECIPIENTS: number = 50;
 
+// C0 controls except HTAB, plus DEL: a line break in a header value can
+// start a new header (e.g. `Bcc:`).
+function hasHeaderUnsafeCharacters(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if ((code < 0x20 && code !== 0x09) || code === 0x7f) return true;
+  }
+  return false;
+}
+
 export function createRecipientSchema(
   allow_mailing_list_ids_as_recipients: boolean = false,
 ) {
@@ -55,7 +65,12 @@ export function createSendEmailRequestBodySchema(
     .object({
       to: createRecipientSchema(allow_mailing_list_ids_as_recipients),
       from: z.string().email().optional(),
-      subject: z.string().nonempty(),
+      subject: z
+        .string()
+        .nonempty()
+        .refine((subject) => !hasHeaderUnsafeCharacters(subject), {
+          message: "Subject must not contain line breaks or control characters!",
+        }),
       message: z.union([sendEmailTemplateOptions, sendRawEmailOptions]),
       replyTo: z.string().email().optional(),
       cc: z

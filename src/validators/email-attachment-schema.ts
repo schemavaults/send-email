@@ -26,17 +26,35 @@ export function base64DecodedByteLength(base64: string): number {
   return Math.floor((base64.length * 3) / 4) - padding;
 }
 
+// C0, DEL and C1 controls.
 function hasControlCharacters(value: string): boolean {
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i);
-    if (code < 0x20 || code === 0x7f) return true;
+    if (code < 0x20 || (code >= 0x7f && code <= 0x9f)) return true;
+  }
+  return false;
+}
+
+// Bidirectional formatting characters (ALM, LRM, RLM, LRE through RLO, LRI
+// through PDI) let a filename like "invoice<U+202E>fdp.exe" display as
+// "invoiceexe.pdf". Listed as code points because the characters are
+// invisible in source.
+const BIDI_FORMATTING = new Set([
+  0x061c, 0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066,
+  0x2067, 0x2068, 0x2069,
+]);
+
+function hasBidiFormatting(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    if (BIDI_FORMATTING.has(value.charCodeAt(i))) return true;
   }
   return false;
 }
 
 /**
  * Name the recipient's mail client shows for the attached file. Unicode is
- *  allowed; path separators and control characters are not.
+ *  allowed; path separators, control characters and bidirectional formatting
+ *  characters are not.
  */
 export const attachmentFilenameSchema = z
   .string()
@@ -50,6 +68,10 @@ export const attachmentFilenameSchema = z
   })
   .refine((name) => !hasControlCharacters(name), {
     message: "Attachment filename must not contain control characters!",
+  })
+  .refine((name) => !hasBidiFormatting(name), {
+    message:
+      "Attachment filename must not contain bidirectional formatting characters!",
   });
 
 /**
@@ -62,19 +84,25 @@ export const attachmentContentSchema = z
   .min(1, "Attachment content must not be empty!");
 
 const MIME_TOKEN = "[A-Za-z0-9!#$&^_.+-]+";
+// Printable ASCII only, so no value can carry CR/LF or other controls out of
+// its header. Quoted: anything printable but `"`. Unquoted: printable minus
+// space, `"` and `;`.
+const MIME_PARAM_VALUE =
+  '(?:"[\\x20\\x21\\x23-\\x7E]*"|[\\x21\\x23-\\x3A\\x3C-\\x7E]+)';
 
 /**
  * MIME type of the attachment, e.g. "application/pdf" or
- *  "text/csv; charset=utf-8". When omitted, the mail-server's transport
- *  derives it from the filename's extension.
+ *  "text/csv; charset=utf-8". Printable ASCII only. When omitted, the
+ *  mail-server's transport derives it from the filename's extension.
  */
 export const attachmentContentTypeSchema = z
   .string()
   .min(1, "Attachment content type must be non-empty!")
   .max(255, "Attachment content type must be at most 255 characters!")
   .regex(
+    // `[ \t]*`, not `\s*`: `\s` matches CR/LF.
     new RegExp(
-      `^${MIME_TOKEN}\\/${MIME_TOKEN}(?:\\s*;\\s*${MIME_TOKEN}=(?:"[^"]*"|[^\\s;"]+))*$`,
+      `^${MIME_TOKEN}\\/${MIME_TOKEN}(?:[ \\t]*;[ \\t]*${MIME_TOKEN}=${MIME_PARAM_VALUE})*$`,
     ),
     "Attachment content type must be a MIME type such as 'application/pdf'!",
   );
@@ -82,15 +110,17 @@ export const attachmentContentTypeSchema = z
 /**
  * Content-ID for inline attachments. Setting it marks the attachment as
  *  inline so the HTML body can reference it as `<img src="cid:<contentId>">`.
- *  Pass the bare identifier -- without the angle brackets.
+ *  Pass the bare identifier -- without the angle brackets. Content-ID is an
+ *  ASCII header; anything else is emitted as an encoded-word that no longer
+ *  matches the HTML's `cid:` reference.
  */
 export const attachmentContentIdSchema = z
   .string()
   .min(1, "Attachment content ID must be non-empty!")
   .max(255, "Attachment content ID must be at most 255 characters!")
   .regex(
-    /^[^\s<>]+$/,
-    "Attachment content ID must not contain whitespace or angle brackets!",
+    /^[\x21-\x3B\x3D\x3F-\x7E]+$/,
+    "Attachment content ID must be printable ASCII without spaces or angle brackets!",
   );
 
 /**
