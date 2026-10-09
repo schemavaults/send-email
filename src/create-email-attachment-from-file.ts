@@ -4,6 +4,7 @@
 // the package's main entry point, which must stay free of `node:` imports so
 // it can be bundled for environments without a filesystem. Import it via the
 // "@schemavaults/send-email/create-email-attachment-from-file" subpath.
+// `src/browser-compatibility.test.ts` enforces this separation.
 
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";

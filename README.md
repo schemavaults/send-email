@@ -315,3 +315,9 @@ bun test
 bun run typecheck
 bun run lint
 ```
+
+### Keeping the package root browser-safe
+
+Consumers bundle the package root for the browser (the mail-server's admin UI imports `sendEmail` from a client component), so nothing reachable from `src/index.ts` may need a Node/Bun runtime. `src/browser-compatibility.test.ts` enforces this on every `bun test`: it bundles the root with esbuild for the browser platform, asserts no Node built-in is imported anywhere in the graph, and evaluates the bundle in a `node:vm` context with no `process` / `Buffer` / `require` before exercising the public API.
+
+Anything that does need Node or Bun -- filesystem access, for example -- goes in its own module exposed through a package subpath (as `create-email-attachment-from-file` is) and is added to that test's `NODE_ONLY_MODULES` list, which both checks the root never imports it and confirms it really is not browser-safe.
