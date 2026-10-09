@@ -121,9 +121,9 @@ const attachment = createEmailAttachment({
 // => { filename: "logo.png", content: "iVBORw0KGgo...", contentType: "image/png", contentId: "logo" }
 ```
 
-Setting `contentId` marks the attachment as inline so the HTML body can embed it via a `cid:` URL; pass the bare identifier without angle brackets. `contentType` is optional -- when omitted, the mail-server's transport derives it from the filename's extension.
+Setting `contentId` marks the attachment as inline so the HTML body can embed it via a `cid:` URL; pass the bare identifier without angle brackets, in printable ASCII. `contentType` is optional -- when omitted, the mail-server's transport derives it from the filename's extension. Non-ASCII names belong in `filename`, not in a `contentType` parameter.
 
-Limits enforced client-side (and exported as `MAX_ATTACHMENTS_PER_EMAIL` / `MAX_TOTAL_ATTACHMENT_BYTES`): at most 20 attachments per email, totalling at most 25 MiB once decoded. Filenames may not contain path separators or control characters. The mail-server, its hosting platform, and the receiving mail systems may enforce lower limits of their own.
+Limits enforced client-side (and exported as `MAX_ATTACHMENTS_PER_EMAIL` / `MAX_TOTAL_ATTACHMENT_BYTES`): at most 20 attachments per email, totalling at most 25 MiB once decoded. Filenames may not contain path separators, control characters, or bidirectional formatting characters (which can disguise `invoice\u202Efdp.exe` as `invoiceexe.pdf`). `contentType` and `contentId` must be printable ASCII, and `subject` must not contain line breaks or other control characters, so no value can break out of its MIME header. The mail-server, its hosting platform, and the receiving mail systems may enforce lower limits of their own.
 
 From the CLI, `--attach <path>` is repeatable on both `send` and `send-to-mailing-list`, and may be combined with `--body-file` (the files are appended to any `attachments` already in the JSON):
 
@@ -286,15 +286,15 @@ type Message =
   | { text: string; html: string }; // both required
 
 type EmailAttachment = {
-  filename: string;            // 1-255 chars; no path separators or control characters
+  filename: string;            // 1-255 chars; no path separators, control or bidi formatting characters
   content: string;             // base64-encoded bytes (standard alphabet, padded)
-  contentType?: string;        // MIME type; derived from the filename when omitted
-  contentId?: string;          // marks the attachment inline; reference as cid:<contentId>
+  contentType?: string;        // MIME type, printable ASCII; derived from the filename when omitted
+  contentId?: string;          // printable ASCII; marks the attachment inline; reference as cid:<contentId>
 };
 
 type SendEmailRequestBody = {
   to: string | string[];       // email address(es) or mailing list UUID
-  subject: string;
+  subject: string;             // no line breaks or control characters (tabs allowed)
   message: Message;
   from?: string;               // defaults to mail-server's configured sender
   replyTo?: string;
