@@ -1,7 +1,7 @@
 {
   "name": "@schemavaults/send-email",
   "description": "Schema defining the shape of the request body to send an email via @schemavaults/mail-server",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "license": "UNLICENSED",
   "private": false,
   "repository": {
@@ -50,6 +50,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./create-email-attachment-from-file": {
+      "types": "./dist/create-email-attachment-from-file.d.ts",
+      "import": "./dist/create-email-attachment-from-file.js",
+      "require": "./dist/create-email-attachment-from-file.js"
     },
     "./*": {
       "types": "./dist/*",

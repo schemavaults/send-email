@@ -6,7 +6,11 @@ import { Command, Option } from "commander";
 import sendEmail from "./send-email";
 import sendEmailToMailingList from "./send-email-to-mailing-list";
 import listEmailTemplates from "./list-email-templates";
-import type { SendEmailRequestBody } from "./send-email-request-body-schema";
+import createEmailAttachmentFromFile from "./create-email-attachment-from-file";
+import type {
+  EmailAttachment,
+  SendEmailRequestBody,
+} from "./send-email-request-body-schema";
 
 interface GlobalOpts {
   apiKey?: string;
@@ -21,6 +25,7 @@ interface MessageOpts {
   html?: string;
   textFile?: string;
   htmlFile?: string;
+  attach?: string[];
 }
 
 interface SendOpts extends MessageOpts {
@@ -88,6 +93,15 @@ function loadBodyFile(path: string): SendEmailRequestBody {
   }
 }
 
+async function loadAttachments(
+  paths: string[] | undefined,
+): Promise<EmailAttachment[]> {
+  if (!paths || paths.length === 0) return [];
+  return await Promise.all(
+    paths.map((path) => createEmailAttachmentFromFile(path)),
+  );
+}
+
 async function withErrorHandling(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
@@ -118,8 +132,12 @@ function attachBodyOptions(cmd: Command): Command {
     )
     .option("--html-file <path>", "Path to a file containing the HTML body")
     .option(
+      "--attach <path...>",
+      "Path to a file to attach (repeatable); its basename becomes the attachment filename",
+    )
+    .option(
       "--body-file <path>",
-      "Path to a JSON file containing the full request body (overrides other body flags)",
+      "Path to a JSON file containing the full request body (overrides other body flags, except --attach which is appended)",
     );
 }
 
@@ -183,8 +201,11 @@ attachBodyOptions(
       };
     }
 
+    const attachments = await loadAttachments(opts.attach);
+
     await sendEmail({
       body,
+      ...(attachments.length > 0 ? { attachments } : {}),
       ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
       ...(global.dryRun ? { dryRun: true } : {}),
       ...(global.transport ? { transport: global.transport } : {}),
@@ -218,6 +239,9 @@ attachBodyOptions(
         ...(fullBody.from ? { from: fullBody.from } : {}),
         ...(fullBody.replyTo ? { replyTo: fullBody.replyTo } : {}),
         ...(fullBody.transport ? { transport: fullBody.transport } : {}),
+        ...(fullBody.attachments
+          ? { attachments: fullBody.attachments }
+          : {}),
       };
     } else {
       if (!opts.subject) {
@@ -231,8 +255,11 @@ attachBodyOptions(
       };
     }
 
+    const attachments = await loadAttachments(opts.attach);
+
     await sendEmailToMailingList({
       body,
+      ...(attachments.length > 0 ? { attachments } : {}),
       ...(opts.mailingListId ? { mailingListId: opts.mailingListId } : {}),
       ...(global.apiKey ? { bearerToken: global.apiKey } : {}),
       ...(global.dryRun ? { dryRun: true } : {}),

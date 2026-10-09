@@ -4,6 +4,11 @@ import {
   type SendEmailRequestBody,
   createSendEmailRequestBodySchema,
 } from "./send-email-request-body-schema";
+import type { EmailAttachment } from "@/validators/email-attachment-schema";
+import {
+  createEmailAttachment,
+  type EmailAttachmentInput,
+} from "./create-email-attachment";
 import getSchemaVaultsMailApiKey from "@/env/get-api-key";
 import parseMailServerUrlWithEnvFallback from "./parse-mail-server-url-with-env-fallback";
 
@@ -19,6 +24,14 @@ export interface ISendEmailOpts {
    *  mail-server's configured transports should deliver this email.
    */
   transport?: string;
+  /**
+   * Convenience for `body.attachments` -- files to attach to the email.
+   *  Unlike `body.attachments`, binary content (`Uint8Array`, `Buffer`,
+   *  `ArrayBuffer`) and plain text (`encoding: "utf8"`) are accepted here
+   *  and base64-encoded for you; see `createEmailAttachment`. Appended after
+   *  any attachments already present on `body`.
+   */
+  attachments?: EmailAttachmentInput[];
 }
 
 export { getSchemaVaultsMailApiKey };
@@ -27,10 +40,17 @@ export async function sendEmail({
   body,
   ...opts
 }: ISendEmailOpts): Promise<void> {
+  const { attachments: bodyAttachments, ...bodyWithoutAttachments } = body;
+  const attachments: EmailAttachment[] = [
+    ...(bodyAttachments ?? []),
+    ...(opts.attachments ?? []).map(createEmailAttachment),
+  ];
+
   const effectiveBody: SendEmailRequestBody = {
-    ...body,
+    ...bodyWithoutAttachments,
     ...(typeof opts.dryRun === "boolean" ? { dryRun: opts.dryRun } : {}),
     ...(typeof opts.transport === "string" ? { transport: opts.transport } : {}),
+    ...(attachments.length > 0 ? { attachments } : {}),
   };
 
   const parsed = await body_schema.safeParseAsync(effectiveBody);
