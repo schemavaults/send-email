@@ -182,7 +182,7 @@ type OneOffEmailBody = {
     | { template_id: string; template_props?: unknown }
     | { text: string; html: string };
   from?: string;                   // address or "Display Name <address>"; defaults to the mail-server's configured sender
-  replyTo?: string;
+  replyTo?: string;                // address or "Display Name <address>"
   cc?: string | string[];          // 1-50
   bcc?: string | string[];         // 1-50
   dryRun?: boolean;                // server validates without dispatching

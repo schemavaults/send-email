@@ -2,7 +2,10 @@ import { z } from "zod";
 import { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 import { transportIdSchema } from "@/validators/transport-id-schema";
 import { emailAttachmentsSchema } from "@/validators/email-attachment-schema";
-import { emailSenderSchema } from "@/validators/email-sender-schema";
+import {
+  emailReplyToSchema,
+  emailSenderSchema,
+} from "@/validators/email-sender-schema";
 
 const sendEmailTemplateOptions = z
   .object({
@@ -78,7 +81,11 @@ export function createSendEmailRequestBodySchema(
           message: "Subject must not contain line breaks or control characters!",
         }),
       message: z.union([sendEmailTemplateOptions, sendRawEmailOptions]),
-      replyTo: z.string().email().optional(),
+      /**
+       * Where replies go: a bare address, or a display name followed by the
+       *  address in angle brackets ("Example Support <support@example.com>").
+       */
+      replyTo: emailReplyToSchema.optional(),
       cc: z
         .union([
           z.string().email(),

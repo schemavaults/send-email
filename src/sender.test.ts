@@ -3,7 +3,10 @@ import {
   type SendEmailRequestBody,
   sendEmailRequestBodySchema,
 } from "./send-email-request-body-schema";
-import { emailSenderSchema } from "@/validators/email-sender-schema";
+import {
+  emailReplyToSchema,
+  emailSenderSchema,
+} from "@/validators/email-sender-schema";
 
 const baseBody = {
   to: "support@schemavaults.com",
@@ -62,5 +65,44 @@ describe("Sender", () => {
     });
     expect(parsed.success).toBeFalse();
     expect(parsed.error?.issues[0]?.path).toEqual(["from"]);
+  });
+});
+
+describe("Reply-to", () => {
+  test.each([
+    "support@example.com",
+    "Example Support <support@example.com>",
+    '"Example, Inc. Support" <support@example.com>',
+  ])("accepts %j", (replyTo: string) => {
+    expect(emailReplyToSchema.safeParse(replyTo).success).toBeTrue();
+  });
+
+  test("follows the sender rules, naming the reply-to field", () => {
+    const parsed = emailReplyToSchema.safeParse(
+      "Example, Inc. <support@example.com>",
+    );
+    expect(parsed.success).toBeFalse();
+    expect(parsed.error?.issues[0]?.message).toStartWith(
+      "Reply-to display names containing",
+    );
+  });
+
+  test("a display name passes through the request body unchanged", () => {
+    const replyTo = "Example Support <support@example.com>";
+    const parsed = sendEmailRequestBodySchema.safeParse({
+      ...baseBody,
+      replyTo,
+    });
+    expect(parsed.success).toBeTrue();
+    expect(parsed.data?.replyTo).toBe(replyTo);
+  });
+
+  test("an invalid reply-to fails the request body", () => {
+    const parsed = sendEmailRequestBodySchema.safeParse({
+      ...baseBody,
+      replyTo: "Example <not-an-email>",
+    });
+    expect(parsed.success).toBeFalse();
+    expect(parsed.error?.issues[0]?.path).toEqual(["replyTo"]);
   });
 });

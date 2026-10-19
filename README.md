@@ -81,22 +81,23 @@ bunx schemavaults-send-email --transport smtp-primary send \
 
 Transport names are defined by whoever configures the mail-server; this package only validates that the value looks like an identifier. An unknown transport name is rejected by the mail-server, not by the client.
 
-### Set the sender
+### Set the sender and reply-to
 
-`from` is optional; when omitted, the mail-server sends from its configured default sender. Pass a bare address, or a display name followed by the address in angle brackets. Wrap a display name in double quotes when it contains any of `( ) [ ] : ; @ ,`:
+`from` and `replyTo` are optional; without `from`, the mail-server sends from its configured default sender. Each takes a bare address, or a display name followed by the address in angle brackets. Wrap a display name in double quotes when it contains any of `( ) [ ] : ; @ ,`:
 
 ```ts
 await sendEmail({
   body: {
     to: "user@example.com",
     from: '"Example, Inc." <noreply@example.com>', // or "Example <noreply@example.com>", or "noreply@example.com"
+    replyTo: "Example Support <support@example.com>",
     subject: "Hello",
     message: { text: "Hello.", html: "<p>Hello.</p>" },
   },
 });
 ```
 
-The address's domain must be one the mail-server's transport is set up to send from. On the CLI, pass the same value to `--from`.
+The `from` address's domain must be one the mail-server's transport is set up to send from. On the CLI, pass the same values to `--from` and `--reply-to`.
 
 ### Attach files
 
@@ -289,9 +290,9 @@ Zod schema for validating template IDs: lowercase alphanumeric with hyphens/unde
 
 Zod schema for validating transport names: lowercase alphanumeric with hyphens/underscores, 1-64 characters, must start with a lowercase letter and end with a lowercase alphanumeric character. Whether a well-formed name corresponds to a transport the mail-server actually has configured is decided server-side.
 
-### `emailSenderSchema`
+### `emailSenderSchema` / `emailReplyToSchema`
 
-Zod schema for the `from` field: a bare address (`noreply@example.com`) or a display name followed by the address in angle brackets (`Example <noreply@example.com>`). Display names may be Unicode; one containing any of `( ) [ ] : ; @ ,` must be wrapped in double quotes (`"Example, Inc." <noreply@example.com>`). Control characters, bidi formatting characters, and angle brackets, double quotes or backslashes inside the display name are rejected.
+Zod schemas for the `from` and `replyTo` fields (identical rules; each names its own field in error messages): a bare address (`noreply@example.com`) or a display name followed by the address in angle brackets (`Example <noreply@example.com>`). Display names may be Unicode; one containing any of `( ) [ ] : ; @ ,` must be wrapped in double quotes (`"Example, Inc." <noreply@example.com>`). Control characters, bidi formatting characters, and angle brackets, double quotes or backslashes inside the display name are rejected.
 
 ### `emailAttachmentSchema` / `emailAttachmentsSchema`
 
@@ -318,7 +319,7 @@ type SendEmailRequestBody = {
   subject: string;             // no line breaks or control characters (tabs allowed)
   message: Message;
   from?: string;               // address or "Display Name <address>"; defaults to mail-server's configured sender
-  replyTo?: string;
+  replyTo?: string;            // address or "Display Name <address>"
   cc?: string | string[];
   bcc?: string | string[];
   dryRun?: boolean;            // server validates without dispatching

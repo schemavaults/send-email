@@ -12,15 +12,16 @@ const emailAddressSchema = z.string().email();
 const DISPLAY_NAME_SPECIALS = /[()[\]:;@,]/;
 
 /**
- * Why `value` is not an acceptable sender, or null when it is. Accepts a bare
- *  address, or a display name followed by the address in angle brackets.
+ * Why `value` is not an acceptable mailbox, or null when it is. Accepts a
+ *  bare address, or a display name followed by the address in angle
+ *  brackets. `label` names the field in the messages ("Sender", "Reply-to").
  */
-function describeEmailSenderProblem(value: string): string | null {
+function describeMailboxProblem(value: string, label: string): string | null {
   if (hasControlCharacters(value)) {
-    return "Sender must not contain line breaks or control characters!";
+    return `${label} must not contain line breaks or control characters!`;
   }
   if (hasBidiFormatting(value)) {
-    return "Sender must not contain bidirectional formatting characters!";
+    return `${label} must not contain bidirectional formatting characters!`;
   }
   if (emailAddressSchema.safeParse(value).success) return null;
 
@@ -29,26 +30,35 @@ function describeEmailSenderProblem(value: string): string | null {
   // bracket is rejected below, so the bracketed address is the only one.
   const open = value.lastIndexOf("<");
   if (open < 0 || !value.endsWith(">") || value.trim() !== value) {
-    return "Sender must be an email address (noreply@example.com) or a display name followed by an address in angle brackets (Example <noreply@example.com>)!";
+    return `${label} must be an email address (noreply@example.com) or a display name followed by an address in angle brackets (Example <noreply@example.com>)!`;
   }
   const address = value.slice(open + 1, -1);
   const name = value.slice(0, open).trimEnd();
   if (!emailAddressSchema.safeParse(address).success) {
-    return "Sender address in angle brackets must be a valid email address!";
+    return `${label} address in angle brackets must be a valid email address!`;
   }
 
   const quoted = name.length >= 2 && name.startsWith('"') && name.endsWith('"');
   const text = quoted ? name.slice(1, -1) : name;
   if (text.trim().length === 0) {
-    return "Sender display name must not be empty!";
+    return `${label} display name must not be empty!`;
   }
   if (/[<>"\\]/.test(text)) {
-    return "Sender display name must not contain angle brackets, double quotes or backslashes!";
+    return `${label} display name must not contain angle brackets, double quotes or backslashes!`;
   }
   if (!quoted && DISPLAY_NAME_SPECIALS.test(text)) {
-    return 'Sender display names containing ( ) [ ] : ; @ or , must be wrapped in double quotes (e.g. "Example, Inc." <noreply@example.com>)!';
+    return `${label} display names containing ( ) [ ] : ; @ or , must be wrapped in double quotes (e.g. "Example, Inc." <noreply@example.com>)!`;
   }
   return null;
+}
+
+function createMailboxSchema(label: string) {
+  return z.string().superRefine((value, ctx) => {
+    const problem = describeMailboxProblem(value, label);
+    if (problem !== null) {
+      ctx.addIssue({ code: "custom", message: problem });
+    }
+  });
 }
 
 /**
@@ -60,11 +70,13 @@ function describeEmailSenderProblem(value: string): string | null {
  *  formatting characters, and angle brackets, double quotes or backslashes
  *  within the display name are rejected.
  */
-export const emailSenderSchema = z.string().superRefine((value, ctx) => {
-  const problem = describeEmailSenderProblem(value);
-  if (problem !== null) {
-    ctx.addIssue({ code: "custom", message: problem });
-  }
-});
+export const emailSenderSchema = createMailboxSchema("Sender");
+
+/**
+ * Where replies to an email go. Same forms and rules as
+ *  {@link emailSenderSchema}: a bare address, or a display name followed by
+ *  the address in angle brackets ("Example Support <support@example.com>").
+ */
+export const emailReplyToSchema = createMailboxSchema("Reply-to");
 
 export default emailSenderSchema;
