@@ -5,6 +5,7 @@ import {
   attachmentContentTypeSchema,
   attachmentFilenameSchema,
 } from "@/validators/email-attachment-schema";
+import { emailSenderSchema } from "@/validators/email-sender-schema";
 
 /**
  * These fields end up in MIME headers. Each must reject anything that could
@@ -56,6 +57,17 @@ const cases = {
     schema: subjectSchema,
     valid: ["Welcome!", "Ünïcödé ✓ 😀", "Tab\tseparated"],
     invalid: ["Hi\r\nBcc: v@example.com", "Hi\nthere", "Hi\x00"],
+  },
+  from: {
+    schema: emailSenderSchema,
+    valid: ["Example <noreply@example.com>", "Ünïcödé ✓ <noreply@example.com>"],
+    invalid: [
+      "Example\r\nBcc: v@example.com <noreply@example.com>", // header injection
+      "Example <noreply@example.com>\r\nBcc: v@example.com",
+      "Tab\tseparated <noreply@example.com>",
+      `Bank${RLO}knaB <noreply@example.com>`, // disguises the display name
+      `a${NEL}b <noreply@example.com>`,
+    ],
   },
 };
 

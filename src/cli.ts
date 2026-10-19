@@ -113,7 +113,10 @@ async function withErrorHandling(fn: () => Promise<void>): Promise<void> {
 
 function attachBodyOptions(cmd: Command): Command {
   return cmd
-    .option("--from <email>", "Sender email address")
+    .option(
+      "--from <sender>",
+      'Sender email address, optionally with a display name ("Example <noreply@example.com>")',
+    )
     .option("--subject <subject>", "Email subject")
     .option("--reply-to <email>", "Reply-To email address")
     .option(

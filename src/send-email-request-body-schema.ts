@@ -2,6 +2,7 @@ import { z } from "zod";
 import { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 import { transportIdSchema } from "@/validators/transport-id-schema";
 import { emailAttachmentsSchema } from "@/validators/email-attachment-schema";
+import { emailSenderSchema } from "@/validators/email-sender-schema";
 
 const sendEmailTemplateOptions = z
   .object({
@@ -64,7 +65,12 @@ export function createSendEmailRequestBodySchema(
   return z
     .object({
       to: createRecipientSchema(allow_mailing_list_ids_as_recipients),
-      from: z.string().email().optional(),
+      /**
+       * Who the email is from: a bare address, or a display name followed by
+       *  the address in angle brackets ("Example <noreply@example.com>").
+       *  When omitted, the mail-server uses its configured default sender.
+       */
+      from: emailSenderSchema.optional(),
       subject: z
         .string()
         .nonempty()
