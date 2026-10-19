@@ -8,6 +8,8 @@ export { emailTemplateIdSchema } from "@/validators/email-template-id-schema";
 
 export { transportIdSchema } from "@/validators/transport-id-schema";
 
+export { emailSenderSchema } from "@/validators/email-sender-schema";
+
 export {
   emailAttachmentSchema,
   emailAttachmentsSchema,

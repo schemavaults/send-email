@@ -181,7 +181,7 @@ type OneOffEmailBody = {
   message:
     | { template_id: string; template_props?: unknown }
     | { text: string; html: string };
-  from?: string;                   // defaults to the mail-server's configured sender
+  from?: string;                   // address or "Display Name <address>"; defaults to the mail-server's configured sender
   replyTo?: string;
   cc?: string | string[];          // 1-50
   bcc?: string | string[];         // 1-50
