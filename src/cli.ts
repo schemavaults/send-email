@@ -118,7 +118,10 @@ function attachBodyOptions(cmd: Command): Command {
       'Sender email address, optionally with a display name ("Example <noreply@example.com>")',
     )
     .option("--subject <subject>", "Email subject")
-    .option("--reply-to <email>", "Reply-To email address")
+    .option(
+      "--reply-to <address>",
+      'Reply-To email address, optionally with a display name ("Example Support <support@example.com>")',
+    )
     .option(
       "--template-id <id>",
       "Email template ID (mutually exclusive with --text/--html)",

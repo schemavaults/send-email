@@ -5,7 +5,10 @@ import {
   attachmentContentTypeSchema,
   attachmentFilenameSchema,
 } from "@/validators/email-attachment-schema";
-import { emailSenderSchema } from "@/validators/email-sender-schema";
+import {
+  emailReplyToSchema,
+  emailSenderSchema,
+} from "@/validators/email-sender-schema";
 
 /**
  * These fields end up in MIME headers. Each must reject anything that could
@@ -67,6 +70,15 @@ const cases = {
       "Tab\tseparated <noreply@example.com>",
       `Bank${RLO}knaB <noreply@example.com>`, // disguises the display name
       `a${NEL}b <noreply@example.com>`,
+    ],
+  },
+  replyTo: {
+    schema: emailReplyToSchema,
+    valid: ["Example Support <support@example.com>"],
+    invalid: [
+      "Support\r\nBcc: v@example.com <support@example.com>", // header injection
+      "Support <support@example.com>\r\nBcc: v@example.com",
+      `Bank${RLO}knaB <support@example.com>`,
     ],
   },
 };
